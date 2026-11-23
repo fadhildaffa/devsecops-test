@@ -62,7 +62,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Trivy filesystem scan (Report)
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -70,7 +70,7 @@ jobs:
           format: json
           output: trivy-fs-report.json
       - name: Trivy filesystem scan (Gate - Fail on High/Critical)
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -115,13 +115,13 @@ jobs:
       - name: Build image
         run: docker build -t devsecops-home-test:${{ github.sha }} ./app
       - name: Trivy image scan (Report)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: devsecops-home-test:${{ github.sha }}
           format: json
           output: trivy-image-report.json
       - name: Trivy image scan (Gate - Fail on High/Critical)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: devsecops-home-test:${{ github.sha }}
           severity: CRITICAL,HIGH
