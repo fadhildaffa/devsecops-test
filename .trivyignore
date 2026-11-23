@@ -1,0 +1,8 @@
+# Trivy Ignore File
+# Security exceptions & accepted architectural trade-offs
+
+# AVD-AWS-0053 / AWS-0053: Load balancer is exposed publicly
+# The Application Load Balancer is intentionally internet-facing (internal = false)
+# to serve incoming public HTTPS traffic, protected by AWS WAFv2 and TLS 1.2+.
+AVD-AWS-0053
+aws-elb-alb-not-public
