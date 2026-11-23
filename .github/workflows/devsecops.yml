@@ -67,6 +67,7 @@ jobs:
           scan-type: fs
           scan-ref: .
           scanners: vuln,misconfig,secret
+          trivyignores: .trivyignore
           format: json
           output: trivy-fs-report.json
       - name: Trivy filesystem scan (Gate - Fail on High/Critical)
@@ -78,6 +79,7 @@ jobs:
           severity: CRITICAL,HIGH
           exit-code: '1'
           ignore-unfixed: true
+          trivyignores: .trivyignore
           format: table
       - name: Upload SCA report
         if: always()

@@ -6,3 +6,4 @@
 # to serve incoming public HTTPS traffic, protected by AWS WAFv2 and TLS 1.2+.
 AVD-AWS-0053
 aws-elb-alb-not-public
+AWS-0053

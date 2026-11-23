@@ -17,7 +17,10 @@ resource "aws_cloudwatch_log_group" "app" {
 }
 
 #trivy:ignore:AVD-AWS-0053
+#trivy:ignore:aws-elb-alb-not-public
+#trivy:ignore:AWS-0053
 #tfsec:ignore:aws-elb-alb-not-public
+#tfsec:ignore:AVD-AWS-0053
 resource "aws_lb" "app" {
   #checkov:skip=CKV_AWS_150: Deletion protection disabled to allow clean automated teardown
   #checkov:skip=CKV_AWS_91: ALB access logging omitted in home test environment
