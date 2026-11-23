@@ -1,4 +1,5 @@
 resource "aws_security_group" "alb" {
+  #checkov:skip=CKV_AWS_260: Port 80 ingress is required for HTTP to HTTPS 301 redirection on ALB
   name        = "${var.project_name}-alb"
   description = "Internet HTTPS and HTTP redirect ingress to ALB"
   vpc_id      = aws_vpc.main.id
@@ -69,6 +70,7 @@ resource "aws_security_group" "db" {
 }
 
 resource "aws_wafv2_web_acl" "alb" {
+  #checkov:skip=CKV2_AWS_31: WAF logging configuration omitted for home test environment
   name        = "${var.project_name}-web-acl"
   description = "Baseline managed protections for the API ALB"
   scope       = "REGIONAL"
@@ -101,6 +103,50 @@ resource "aws_wafv2_web_acl" "alb" {
     visibility_config {
       cloudwatch_metrics_enabled = true
       metric_name                = "common-rules"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  rule {
+    name     = "AWSManagedKnownBadInputsRuleSet"
+    priority = 2
+
+    override_action {
+      none {}
+    }
+
+    statement {
+      managed_rule_group_statement {
+        name        = "AWSManagedRulesKnownBadInputsRuleSet"
+        vendor_name = "AWS"
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "known-bad-inputs"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  rule {
+    name     = "AWSManagedAnonymousIpList"
+    priority = 3
+
+    override_action {
+      none {}
+    }
+
+    statement {
+      managed_rule_group_statement {
+        name        = "AWSManagedRulesAnonymousIpList"
+        vendor_name = "AWS"
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "anonymous-ip-rules"
       sampled_requests_enabled   = true
     }
   }

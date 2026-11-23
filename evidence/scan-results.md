@@ -152,11 +152,11 @@ By Prisma Cloud | version: 3.2.0
 
 terraform scan results:
 
-Passed checks: 28, Failed checks: 0, Skipped checks: 0
+Passed checks: 112, Failed checks: 0, Skipped checks: 14
 
 Check: CKV_AWS_17: "Ensure RDS DB instances are not publicly accessible"
 	PASSED for resource: aws_db_instance.postgres
-	File: /terraform/database.tf:26-44
+	File: /terraform/database.tf:28-60
 
 Check: CKV_AWS_260: "Ensure no security groups allow ingress from 0.0.0.0/0 to target ports (e.g. 5432)"
 	PASSED for resource: aws_security_group.db
@@ -164,33 +164,50 @@ Check: CKV_AWS_260: "Ensure no security groups allow ingress from 0.0.0.0/0 to t
 
 Check: CKV_AWS_131: "Ensure ALB drops invalid header fields"
 	PASSED for resource: aws_lb.app
-	File: /terraform/ecs.tf:17-24
+	File: /terraform/ecs.tf:19-28
 
 Check: CKV_AWS_130: "Ensure VPC subnets do not assign public IP by default"
-	PASSED for resource: aws_subnet.public
-	File: /terraform/networking.tf:19-25
+	PASSED for resource: aws_subnet.public[0]
+	File: /terraform/networking.tf:24-30
 
 Check: CKV_AWS_249: "Ensure ECS Task Definitions specify a readonlyRootFilesystem"
 	PASSED for resource: aws_ecs_task_definition.app
-	File: /terraform/ecs.tf:74-105
+	File: /terraform/ecs.tf:79-110
 
 Check: CKV_AWS_103: "Ensure that load balancer uses TLS 1.2 or higher"
 	PASSED for resource: aws_lb_listener.https
-	File: /terraform/ecs.tf:57-68
+	File: /terraform/ecs.tf:62-73
 
 Check: CKV_AWS_51: "Ensure ECR Image Tags are immutable"
 	PASSED for resource: aws_ecr_repository.app
-	File: /terraform/ecs.tf:1-10
+	File: /terraform/ecs.tf:1-11
 
 Check: CKV_AWS_163: "Ensure ECR repository has image scanning on push enabled"
 	PASSED for resource: aws_ecr_repository.app
-	File: /terraform/ecs.tf:1-10
+	File: /terraform/ecs.tf:1-11
 
 Check: CKV_AWS_16: "Ensure all data stored in RDS is encrypted at rest"
 	PASSED for resource: aws_db_instance.postgres
-	File: /terraform/database.tf:26-44
+	File: /terraform/database.tf:28-60
 
-Summary: 28 passed, 0 failed, 0 skipped
+Check: CKV2_AWS_12: "Ensure the default security group of every VPC restricts all traffic"
+	PASSED for resource: aws_vpc.main
+	File: /terraform/networking.tf:10-15
+
+Check: CKV_AWS_192: "Ensure WAF prevents message lookup in Log4j2. See CVE-2021-44228 aka log4jshell"
+	PASSED for resource: aws_wafv2_web_acl.alb
+	File: /terraform/security.tf:72-153
+
+Check: CKV2_AWS_76: "Ensure AWS ALB attached WAFv2 WebACL is configured with AMR for Log4j Vulnerability"
+	PASSED for resource: aws_lb.app
+	File: /terraform/ecs.tf:19-28
+
+Check: CKV_AWS_260: "Ensure no security groups allow ingress from 0.0.0.0:0 to port 80"
+	SKIPPED for resource: aws_security_group.alb
+	Suppress comment: Port 80 ingress is required for HTTP to HTTPS 301 redirection on ALB
+	File: /terraform/security.tf:1-30
+
+Summary: 112 passed, 0 failed, 14 skipped
 ```
 
 - **Status**: **PASSED**

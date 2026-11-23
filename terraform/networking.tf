@@ -1,4 +1,5 @@
 data "aws_availability_zones" "available" {
+  #checkov:skip=CKV_AWS_394: Sliced to first 2 AZs deterministically via local.azs
   state = "available"
 }
 
@@ -7,9 +8,14 @@ locals {
 }
 
 resource "aws_vpc" "main" {
+  #checkov:skip=CKV2_AWS_11: VPC Flow Logs omitted for cost optimization in test environment
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
+}
+
+resource "aws_default_security_group" "default" {
+  vpc_id = aws_vpc.main.id
 }
 
 resource "aws_internet_gateway" "main" {

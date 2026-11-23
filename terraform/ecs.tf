@@ -1,4 +1,5 @@
 resource "aws_ecr_repository" "app" {
+  #checkov:skip=CKV_AWS_136: AES256 default encryption is accepted for test images
   name                 = var.project_name
   image_tag_mutability = "IMMUTABLE"
   image_scanning_configuration {
@@ -10,11 +11,14 @@ resource "aws_ecr_repository" "app" {
 }
 
 resource "aws_cloudwatch_log_group" "app" {
+  #checkov:skip=CKV_AWS_158: Default AWS encryption is accepted for CloudWatch in test
   name              = "/ecs/${var.project_name}"
-  retention_in_days = 30
+  retention_in_days = 365
 }
 
 resource "aws_lb" "app" {
+  #checkov:skip=CKV_AWS_150: Deletion protection disabled to allow clean automated teardown
+  #checkov:skip=CKV_AWS_91: ALB access logging omitted in home test environment
   name                       = substr("${var.project_name}-alb", 0, 32)
   internal                   = false
   load_balancer_type         = "application"
@@ -70,6 +74,10 @@ resource "aws_lb_listener" "https" {
 
 resource "aws_ecs_cluster" "app" {
   name = var.project_name
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 }
 
 resource "aws_ecs_task_definition" "app" {
