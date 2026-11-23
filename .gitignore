@@ -1,0 +1,23 @@
+# Go
+app/bin/
+app/vendor/
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/*.tfplan
+terraform/tfplan
+terraform/.terraform.lock.hcl
+
+# Local env / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Reports
+*.html
+*.sarif
+zap-report.html

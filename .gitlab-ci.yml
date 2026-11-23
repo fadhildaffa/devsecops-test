@@ -1,0 +1,137 @@
+stages:
+  - validate
+  - test
+  - scan
+  - build
+  - package-scan
+  - dast
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  APP_IMAGE: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+
+# 1. Source Validation
+source-validation:
+  stage: validate
+  image: golang:1.23-alpine
+  before_script:
+    - apk add --no-cache git
+  script:
+    - cd app
+    - test -z "$(gofmt -l src)"
+    - go test -v ./...
+    - go vet ./...
+
+# 2. Secret Scanning
+secret-scanning:
+  stage: scan
+  image:
+    name: zricethezav/gitleaks:latest
+    entrypoint: [""]
+  script:
+    - gitleaks detect --source . --verbose --redact
+  artifacts:
+    when: always
+    paths:
+      - gitleaks-report.json
+
+# 3. SAST
+sast-semgrep:
+  stage: scan
+  image: returntocorp/semgrep:latest
+  script:
+    - semgrep scan --config auto --sarif --output semgrep.sarif
+  artifacts:
+    when: always
+    reports:
+      sast: semgrep.sarif
+    paths:
+      - semgrep.sarif
+
+# 4. SCA / Dependency Scanning
+sca-trivy:
+  stage: scan
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  script:
+    # Full report for all severities
+    - trivy fs --format json -o trivy-fs-report.json .
+    # Gate failing only on HIGH and CRITICAL
+    - trivy fs --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed .
+  artifacts:
+    when: always
+    paths:
+      - trivy-fs-report.json
+
+# 5. Terraform / IaC Scanning
+iac-checkov:
+  stage: scan
+  image:
+    name: bridgecrew/checkov:latest
+    entrypoint: [""]
+  script:
+    - checkov -d terraform/ --framework terraform --output json --output-file-path checkov-report.json
+    - checkov -d terraform/ --framework terraform --soft-fail false
+  artifacts:
+    when: always
+    paths:
+      - checkov-report.json
+
+# 6. Docker Build
+docker-build:
+  stage: build
+  image: docker:24-cli
+  services:
+    - docker:24-dind
+  script:
+    - docker build -t "$APP_IMAGE" ./app
+    - docker save "$APP_IMAGE" -o app-image.tar
+  artifacts:
+    paths:
+      - app-image.tar
+    expire_in: 1 hour
+
+# 7. Container Vulnerability Scanning
+container-scan:
+  stage: package-scan
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  script:
+    - trivy image --input app-image.tar --format json -o trivy-image-report.json
+    - trivy image --input app-image.tar --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed
+  artifacts:
+    when: always
+    paths:
+      - trivy-image-report.json
+
+# 8. DAST
+dast-zap:
+  stage: dast
+  image: docker:24-cli
+  services:
+    - docker:24-dind
+  script:
+    - docker load -i app-image.tar
+    - docker run -d --name sample-api -p 8080:8080 "$APP_IMAGE"
+    - sleep 5
+    - docker run --rm --network host ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://127.0.0.1:8080 -r zap-report.html || true
+  artifacts:
+    when: always
+    paths:
+      - zap-report.html
+
+# 9. Deployment Simulation / Protected Approval Gate
+deploy-production:
+  stage: deploy
+  environment:
+    name: production
+  when: manual
+  only:
+    - main
+  script:
+    - echo "Deployment approved and authenticated via AWS OIDC."
+    - echo "Pushing immutable image $APP_IMAGE to ECR and updating ECS service..."
